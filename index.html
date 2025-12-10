@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Web History Analyzer — Demo UI</title>
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#0f1720; color:#e6eef8; margin:0; padding:20px; }
+    .container{max-width:900px;margin:0 auto;}
+    h1{margin:0 0 8px;font-size:20px}
+    .card{background:#0b1220;border:1px solid #1f2a37;padding:16px;border-radius:10px;margin-top:12px;}
+    input, select, button { padding:8px 10px; font-size:14px; border-radius:6px; border:1px solid #26323d; background:#07101a; color:#e6eef8; }
+    button{ cursor:pointer; }
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    pre{white-space:pre-wrap;background:#06121a;padding:12px;border-radius:8px;border:1px solid #123; color:#cfe8ff; max-height:360px; overflow:auto;}
+    .small {font-size:13px; color:#9fb7cf;}
+    .green { color:#8be58b; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Web History Analyzer — Demo UI</h1>
+    <p class="small">This page calls your backend hosted on Render. Use the buttons below to run the sample analysis and view generated reports.</p>
+
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <button id="btnAnalyzeSample">Run Sample Analysis</button>
+        <button id="btnListReports">List Reports</button>
+        <select id="reportSelect"><option value="">-- pick report to download --</option></select>
+        <button id="btnDownload" disabled>Download Selected</button>
+        <span id="status" class="small"></span>
+      </div>
+
+      <div style="margin-top:8px">
+        <label class="small">Backend base URL:</label>
+        <div style="margin-top:6px" class="row">
+          <input id="backendUrl" value="https://web-search-analyser.onrender.com" style="width:100%" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px">
+      <h2 style="margin:0 0 8px">Response</h2>
+      <pre id="output">No response yet. Click "Run Sample Analysis" to start.</pre>
+    </div>
+  </div>
+
+  <script>
+    const btnAnalyzeSample = document.getElementById('btnAnalyzeSample');
+    const btnListReports = document.getElementById('btnListReports');
+    const btnDownload = document.getElementById('btnDownload');
+    const output = document.getElementById('output');
+    const status = document.getElementById('status');
+    const reportSelect = document.getElementById('reportSelect');
+    const backendUrlInput = document.getElementById('backendUrl');
+
+    function setStatus(t){
+      status.textContent = t;
+    }
+    function show(obj){
+      if(typeof obj === 'string') output.textContent = obj;
+      else output.textContent = JSON.stringify(obj, null, 2);
+    }
+
+    async function post(path, body = {}) {
+      const base = backendUrlInput.value.trim();
+      const url = base.replace(/\/$/, '') + path;
+      setStatus('⏳ sending...');
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      setStatus('done');
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return text; }
+    }
+
+    async function get(path) {
+      const base = backendUrlInput.value.trim();
+      const url = base.replace(/\/$/, '') + path;
+      setStatus('⏳ fetching...');
+      const res = await fetch(url);
+      setStatus('done');
+      const text = await res.text();
+      try { return JSON.parse(text); } catch { return text; }
+    }
+
+    btnAnalyzeSample.addEventListener('click', async () => {
+      setStatus('Running sample analysis...');
+      show('Running sample analysis. This may take a few seconds...');
+      try {
+        const r = await post('/analyze_sample');
+        show(r);
+        // refresh reports list
+        await loadReports();
+      } catch (e) {
+        show('ERROR: ' + String(e));
+      }
+    });
+
+    btnListReports.addEventListener('click', async () => {
+      await loadReports();
+    });
+
+    btnDownload.addEventListener('click', async () => {
+      const file = reportSelect.value;
+      if(!file) return alert('Pick a report first');
+      setStatus('Downloading ' + file + ' ...');
+      try {
+        const data = await get('/download?filename=' + encodeURIComponent(file));
+        if(data && data.content) show(data.content);
+        else show(data);
+      } catch (e) { show('ERROR: ' + String(e)); }
+    });
+
+    async function loadReports(){
+      try {
+        const r = await get('/reports');
+        if(Array.isArray(r.reports)) {
+          reportSelect.innerHTML = '<option value="">-- pick report to download --</option>';
+          r.reports.forEach(f => {
+            const o = document.createElement('option');
+            o.value = f; o.textContent = f;
+            reportSelect.appendChild(o);
+          });
+          btnDownload.disabled = r.reports.length === 0;
+          show(r);
+        } else {
+          show(r);
+        }
+      } catch (e) {
+        show('ERROR: ' + String(e));
+      }
+    }
+
+    // load reports once on open
+    loadReports();
+  </script>
+</body>
+</html>
