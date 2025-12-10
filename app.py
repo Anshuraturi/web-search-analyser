@@ -81,3 +81,63 @@ def download_report(filename: str):
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
     return {"filename": filename, "content": file_path.read_text(encoding="utf-8")}
+    # --- paste this at bottom of app.py ---
+
+import json
+from pathlib import Path
+from datetime import datetime
+
+@app.post("/analyze_sample")
+def analyze_sample():
+    """
+    Analyze bundled sample_history.json so the hosted server can produce a real report.
+    """
+    # Load sample file
+    sample_file = Path("sample_history.json")
+    if not sample_file.exists():
+        raise HTTPException(status_code=404, detail="sample_history.json not found in repo")
+
+    try:
+        raw = json.loads(sample_file.read_text(encoding="utf-8"))
+        # Convert timestamps to datetime objects like analyzer expects
+        for entry in raw:
+            if isinstance(entry.get("timestamp"), str):
+                try:
+                    entry["timestamp"] = datetime.strptime(entry["timestamp"], "%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    entry["timestamp"] = datetime.now()
+
+        # Use the analyzer class directly
+        if not analyzer_module:
+            return {"error": "browse_history_analyzer.py failed to import", "import_error": import_err}
+
+        AnalyzerClass = getattr(analyzer_module, "BrowserHistoryAnalyzer")
+        analyzer = AnalyzerClass()
+
+        # Run pattern analysis and security checks on the sample
+        analysis = analyzer.analyze_browsing_patterns(raw)
+        security_issues = analyzer.detect_security_issues(raw)
+
+        # Save output files (so /reports will show them)
+        os.makedirs(analyzer.output_dir, exist_ok=True)
+        # write a small text report
+        txt = analyzer.generate_comprehensive_report("sample", analysis, security_issues)
+        txt_path = Path(analyzer.output_dir) / "sample_forensic_report.txt"
+        txt_path.write_text(txt, encoding="utf-8")
+
+        # Save CSVs
+        analyzer.save_csv_data("sample", raw, security_issues)
+
+        return {
+            "status": "done",
+            "analysis_summary": {
+                "total_entries": analysis.get("total_entries", 0),
+                "suspicious_domains": len(analysis.get("suspicious_domains", [])),
+                "suspicious_keywords": len(analysis.get("suspicious_keywords", []))
+            },
+            "report_file": str(txt_path)
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error processing sample: {e}")
+
