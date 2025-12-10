@@ -1,0 +1,292 @@
+/* --- Variables & Global Reset --- */
+:root {
+    --color-primary: #007AFF; /* Vibrant Blue Accent */
+    --color-background-deep: #0e1217; /* Very Dark Background */
+    --color-card-bg: #151a22; /* Slightly Lighter Card Background */
+    --color-text-light: #e6eef8;
+    --color-text-muted: #9fb7cf;
+    --color-border: #26323d;
+    --color-input-bg: #07101a;
+    --color-success: #34C759; /* Green for success */
+    --color-error: #FF3B30; /* Red for errors */
+}
+
+* {
+    box-sizing: border-box;
+    /* Apply a smooth transition globally for subtle hover/focus effects */
+    transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
+}
+
+/* --- Keyframes for Creative Background --- */
+@keyframes gradientShift {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: var(--color-text-light);
+    margin: 0;
+    padding: 20px;
+    line-height: 1.6;
+
+    /* --- CREATIVE BACKGROUND: Animated Gradient --- */
+    background: linear-gradient(-45deg, var(--color-background-deep), var(--color-card-bg), var(--color-background-deep));
+    background-size: 400% 400%; /* Large gradient size for subtle movement */
+    animation: gradientShift 30s ease infinite; /* Slow, continuous animation */
+}
+
+/* --- Layout & Header --- */
+.container {
+    max-width: 960px;
+    margin: 0 auto;
+}
+
+.header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+h1 {
+    margin: 0 0 4px;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+.tagline {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    margin: 0;
+}
+
+/* --- Text Animation Styles (Applied to h1 span) --- */
+
+.anim-title {
+    /* Set the color and style for the animated text */
+    color: var(--color-primary); 
+    display: inline-block;
+    white-space: nowrap;
+    overflow: hidden;
+
+    /* Animation properties */
+    --steps: 22; /* Estimate the number of characters in the title */
+    --duration: 1.5s; 
+
+    /* Apply animations */
+    animation: 
+        typing calc(var(--duration) + 0.5s) steps(var(--steps), end) forwards,
+        cursor 0.6s step-end infinite alternate,
+        pulseGlow 3s ease-in-out infinite alternate;
+        
+    /* The blinking cursor line */
+    border-right: 3px solid var(--color-primary); 
+}
+
+/* The Typing Effect: Reveals the text by animating the width */
+@keyframes typing {
+    from { width: 0 }
+    to { width: 100% }
+}
+
+/* The Pulsing Glow: A subtle glow around the text */
+@keyframes pulseGlow {
+    0% { 
+        text-shadow: 0 0 5px rgba(0, 122, 255, 0.4); 
+    }
+    100% { 
+        text-shadow: 0 0 10px rgba(0, 122, 255, 0.8), 0 0 20px rgba(0, 122, 255, 0.2); 
+    }
+}
+
+/* The Cursor Effect: Hides/shows the border to simulate blinking */
+@keyframes cursor {
+    50% { border-color: transparent; }
+}
+
+
+/* --- Card & Components --- */
+.card {
+    background: var(--color-card-bg);
+    border: 1px solid var(--color-border);
+    padding: 20px;
+    border-radius: 12px;
+    margin-top: 16px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.card-title {
+    margin: 0 0 16px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--color-text-light);
+}
+
+.row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+.row.input-group {
+    margin-top: 15px;
+}
+.row.sse-controls {
+    margin-bottom: 0;
+}
+
+/* --- Inputs & Selects --- */
+.input-field {
+    padding: 10px 12px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    background: var(--color-input-bg);
+    color: var(--color-text-light);
+    flex-grow: 1;
+    min-width: 150px;
+    appearance: none;
+    -webkit-appearance: none;
+}
+.input-field:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.3);
+    outline: none;
+}
+.input-label {
+    font-size: 14px;
+    color: var(--color-text-muted);
+    white-space: nowrap;
+}
+.url-input {
+    flex-grow: 3;
+}
+.report-select {
+    flex-grow: 2;
+    /* Custom arrow for select box */
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%239fb7cf' d='M5 6L0 0h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+}
+
+/* --- Buttons --- */
+.btn {
+    padding: 10px 16px;
+    font-size: 14px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.btn-primary { /* Analyze */
+    background: var(--color-primary);
+    color: var(--color-card-bg);
+    order: -1; 
+}
+.btn-primary:hover:not(:disabled) {
+    background: #4C9AFF;
+}
+
+.btn-secondary { /* List Reports */
+    background: transparent;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+}
+.btn-secondary:hover:not(:disabled) {
+    background: rgba(0, 122, 255, 0.1);
+}
+
+.btn-download { /* Download */
+    background: var(--color-success);
+    color: var(--color-card-bg);
+}
+.btn-download:hover:not(:disabled) {
+    background: #50e350;
+}
+
+.btn-tertiary { /* SSE */
+    background: var(--color-input-bg);
+    color: var(--color-text-light);
+    border: 1px solid var(--color-border);
+}
+.btn-tertiary:hover:not(:disabled) {
+    background: #26323d;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* --- Status Indicators --- */
+.status-indicator {
+    font-size: 13px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+.status-green {
+    color: var(--color-success);
+    font-weight: 600;
+}
+.status-error {
+    color: var(--color-error);
+    font-weight: 600;
+}
+.status-muted {
+    color: var(--color-text-muted);
+    font-size: 14px;
+}
+
+/* --- Code Block/Output --- */
+.code-block {
+    white-space: pre-wrap;
+    background: var(--color-input-bg);
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid var(--color-border);
+    color: #ffd700; 
+    max-height: 400px;
+    overflow-y: auto;
+    font-size: 14px;
+    font-family: Consolas, Monaco, 'Courier New', monospace;
+}
+
+/* --- Responsiveness (Mobile Optimization) --- */
+@media (max-width: 600px) {
+    .row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .btn, .input-field {
+        width: 100%;
+        margin-top: 4px;
+    }
+    
+    /* Reorder the primary button to the top of its column stack */
+    .analysis-actions .btn-primary {
+        order: -3; 
+    }
+    
+    .status-indicator {
+        align-self: flex-start;
+    }
+
+    .container {
+        padding: 0 10px;
+    }
+}
