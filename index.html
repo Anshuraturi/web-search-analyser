@@ -15,6 +15,7 @@
     pre{white-space:pre-wrap;background:#06121a;padding:12px;border-radius:8px;border:1px solid #123; color:#cfe8ff; max-height:360px; overflow:auto;}
     .small {font-size:13px; color:#9fb7cf;}
     .green { color:#8be58b; }
+    .muted { color:#6f8aa0; font-size:13px; }
   </style>
 </head>
 <body>
@@ -31,11 +32,15 @@
         <span id="status" class="small"></span>
       </div>
 
-      <div style="margin-top:8px">
+      <div style="margin-top:8px" class="row">
         <label class="small">Backend base URL:</label>
-        <div style="margin-top:6px" class="row">
-          <input id="backendUrl" value="https://web-search-analyser.onrender.com" style="width:100%" />
-        </div>
+        <input id="backendUrl" value="https://web-search-analyser.onrender.com" style="width:100%" />
+      </div>
+
+      <div style="margin-top:12px" class="row">
+        <button id="btnStartSSE">Start SSE</button>
+        <button id="btnStopSSE" disabled>Stop SSE</button>
+        <span id="sseStatus" class="muted">SSE stopped</span>
       </div>
     </div>
 
@@ -53,6 +58,12 @@
     const status = document.getElementById('status');
     const reportSelect = document.getElementById('reportSelect');
     const backendUrlInput = document.getElementById('backendUrl');
+
+    const btnStartSSE = document.getElementById('btnStartSSE');
+    const btnStopSSE = document.getElementById('btnStopSSE');
+    const sseStatus = document.getElementById('sseStatus');
+
+    let sseConnection = null;
 
     function setStatus(t){
       status.textContent = t;
@@ -136,6 +147,67 @@
 
     // load reports once on open
     loadReports();
+
+    // ---------- SSE logic ----------
+    function startSSE(browser="Chrome"){
+      if (sseConnection) return;
+      const base = backendUrlInput.value.replace(/\/$/, '');
+      const url = base + '/events?browser=' + encodeURIComponent(browser);
+
+      try {
+        const source = new EventSource(url);
+
+        source.onmessage = function(e){
+          try {
+            const payload = JSON.parse(e.data);
+            if(payload.type === "new_history"){
+              payload.data.forEach(item => {
+                const line = `${item.timestamp} — ${item.domain || ''} — ${item.url}\n`;
+                // prepend new events
+                output.textContent = line + output.textContent;
+              });
+            } else {
+              // other message types
+              output.textContent = JSON.stringify(payload,null,2) + '\n' + output.textContent;
+            }
+          } catch(err) {
+            console.error("SSE parse error", err);
+          }
+        };
+
+        source.addEventListener('heartbeat', function(e){ /* ignore heartbeats */ });
+        source.addEventListener('error', function(e){
+          console.error('SSE connection error', e);
+        });
+
+        sseConnection = source;
+        sseStatus.textContent = 'SSE running (browser=' + browser + ')';
+        btnStartSSE.disabled = true;
+        btnStopSSE.disabled = false;
+      } catch (err) {
+        console.error("SSE not supported or failed:", err);
+        alert("Realtime updates not supported in this browser.");
+      }
+    }
+
+    function stopSSE(){
+      if(!sseConnection) return;
+      try {
+        sseConnection.close();
+      } catch(e){ /* ignore */ }
+      sseConnection = null;
+      sseStatus.textContent = 'SSE stopped';
+      btnStartSSE.disabled = false;
+      btnStopSSE.disabled = true;
+    }
+
+    btnStartSSE.addEventListener('click', () => startSSE('Chrome'));
+    btnStopSSE.addEventListener('click', stopSSE);
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+      if (sseConnection) try { sseConnection.close(); } catch(_) {}
+    });
   </script>
 </body>
 </html>
