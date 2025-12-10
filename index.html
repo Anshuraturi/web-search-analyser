@@ -1,213 +1,232 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Web History Analyzer — Demo UI</title>
-  <style>
-    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#0f1720; color:#e6eef8; margin:0; padding:20px; }
-    .container{max-width:900px;margin:0 auto;}
-    h1{margin:0 0 8px;font-size:20px}
-    .card{background:#0b1220;border:1px solid #1f2a37;padding:16px;border-radius:10px;margin-top:12px;}
-    input, select, button { padding:8px 10px; font-size:14px; border-radius:6px; border:1px solid #26323d; background:#07101a; color:#e6eef8; }
-    button{ cursor:pointer; }
-    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    pre{white-space:pre-wrap;background:#06121a;padding:12px;border-radius:8px;border:1px solid #123; color:#cfe8ff; max-height:360px; overflow:auto;}
-    .small {font-size:13px; color:#9fb7cf;}
-    .green { color:#8be58b; }
-    .muted { color:#6f8aa0; font-size:13px; }
-  </style>
-</head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Web History Analyzer — Demo UI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css"> </head>
 <body>
-  <div class="container">
-    <h1>Web History Analyzer — Demo UI</h1>
-    <p class="small">This page calls your backend hosted on Render. Use the buttons below to run the sample analysis and view generated reports.</p>
+  <div class="container">
+    <header class="header">
+      <h1>Web History Analyzer</h1>
+      <p class="tagline">Insightful analysis for your web projects.</p>
+    </header>
 
-    <div class="card">
-      <div class="row" style="margin-bottom:10px">
-        <button id="btnAnalyzeSample">Run Sample Analysis</button>
-        <button id="btnListReports">List Reports</button>
-        <select id="reportSelect"><option value="">-- pick report to download --</option></select>
-        <button id="btnDownload" disabled>Download Selected</button>
-        <span id="status" class="small"></span>
-      </div>
+        <div class="card controls-card">
+      <h2 class="card-title">Analysis & Report Management</h2>
 
-      <div style="margin-top:8px" class="row">
-        <label class="small">Backend base URL:</label>
-        <input id="backendUrl" value="https://web-search-analyser.onrender.com" style="width:100%" />
-      </div>
+            <div class="row analysis-actions">
+        <button id="btnAnalyzeSample" class="btn btn-primary">Run Sample Analysis</button>
+        <button id="btnListReports" class="btn btn-secondary">List Reports</button>
+        <select id="reportSelect" class="input-field report-select"><option value="">-- pick report to download --</option></select>
+        <button id="btnDownload" class="btn btn-download" disabled>Download Selected</button>
+      </div>
+      <span id="status" class="status-indicator"></span>
 
-      <div style="margin-top:12px" class="row">
-        <button id="btnStartSSE">Start SSE</button>
-        <button id="btnStopSSE" disabled>Stop SSE</button>
-        <span id="sseStatus" class="muted">SSE stopped</span>
-      </div>
-    </div>
+            <div class="row input-group">
+        <label class="input-label">Backend base URL:</label>
+        <input id="backendUrl" value="https://web-search-analyser.onrender.com" class="input-field url-input" />
+      </div>
 
-    <div class="card" style="margin-top:12px">
-      <h2 style="margin:0 0 8px">Response</h2>
-      <pre id="output">No response yet. Click "Run Sample Analysis" to start.</pre>
-    </div>
-  </div>
+            <div class="row sse-controls">
+        <button id="btnStartSSE" class="btn btn-tertiary">Start SSE</button>
+        <button id="btnStopSSE" class="btn btn-tertiary" disabled>Stop SSE</button>
+        <span id="sseStatus" class="status-muted">SSE stopped</span>
+      </div>
+    </div>
 
-  <script>
-    const btnAnalyzeSample = document.getElementById('btnAnalyzeSample');
-    const btnListReports = document.getElementById('btnListReports');
-    const btnDownload = document.getElementById('btnDownload');
-    const output = document.getElementById('output');
-    const status = document.getElementById('status');
-    const reportSelect = document.getElementById('reportSelect');
-    const backendUrlInput = document.getElementById('backendUrl');
+        <div class="card response-viewer-card">
+      <h2 class="card-title">API Response / Real-time Events</h2>
+      <pre id="output" class="code-block">No response yet. Click "Run Sample Analysis" to start.</pre>
+    </div>
+  </div>
 
-    const btnStartSSE = document.getElementById('btnStartSSE');
-    const btnStopSSE = document.getElementById('btnStopSSE');
-    const sseStatus = document.getElementById('sseStatus');
+  <script>
+    // The JavaScript logic remains the same, ensuring all new class names are accounted for if you were to change any JS logic.
+    // However, since the IDs remain the same, the JS snippet is not repeated here.
+    // The core improvement is the separation of concerns and the new CSS design.
+    // Place your original JS snippet here.
+    const btnAnalyzeSample = document.getElementById('btnAnalyzeSample');
+    const btnListReports = document.getElementById('btnListReports');
+    const btnDownload = document.getElementById('btnDownload');
+    const output = document.getElementById('output');
+    const status = document.getElementById('status');
+    const reportSelect = document.getElementById('reportSelect');
+    const backendUrlInput = document.getElementById('backendUrl');
 
-    let sseConnection = null;
+    const btnStartSSE = document.getElementById('btnStartSSE');
+    const btnStopSSE = document.getElementById('btnStopSSE');
+    const sseStatus = document.getElementById('sseStatus');
 
-    function setStatus(t){
-      status.textContent = t;
-    }
-    function show(obj){
-      if(typeof obj === 'string') output.textContent = obj;
-      else output.textContent = JSON.stringify(obj, null, 2);
-    }
+    let sseConnection = null;
 
-    async function post(path, body = {}) {
-      const base = backendUrlInput.value.trim();
-      const url = base.replace(/\/$/, '') + path;
-      setStatus('⏳ sending...');
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      setStatus('done');
-      const text = await res.text();
-      try { return JSON.parse(text); } catch { return text; }
-    }
+    function setStatus(t){
+      status.textContent = t;
+      // Add/remove active status class for visual feedback
+      status.classList.remove('status-green', 'status-error');
+      if (t.includes('done')) {
+        status.classList.add('status-green');
+      } else if (t.includes('ERROR')) {
+        status.classList.add('status-error');
+      }
+    }
+    function show(obj){
+      if(typeof obj === 'string') output.textContent = obj;
+      else output.textContent = JSON.stringify(obj, null, 2);
+    }
 
-    async function get(path) {
-      const base = backendUrlInput.value.trim();
-      const url = base.replace(/\/$/, '') + path;
-      setStatus('⏳ fetching...');
-      const res = await fetch(url);
-      setStatus('done');
-      const text = await res.text();
-      try { return JSON.parse(text); } catch { return text; }
-    }
+    async function post(path, body = {}) {
+      const base = backendUrlInput.value.trim();
+      const url = base.replace(/\/$/, '') + path;
+      setStatus('⏳ sending...');
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        setStatus('done');
+        const text = await res.text();
+        try { return JSON.parse(text); } catch { return text; }
+      } catch (e) {
+        setStatus('ERROR: Network or CORS issue');
+        throw e;
+      }
+    }
 
-    btnAnalyzeSample.addEventListener('click', async () => {
-      setStatus('Running sample analysis...');
-      show('Running sample analysis. This may take a few seconds...');
-      try {
-        const r = await post('/analyze_sample');
-        show(r);
-        // refresh reports list
-        await loadReports();
-      } catch (e) {
-        show('ERROR: ' + String(e));
-      }
-    });
+    async function get(path) {
+      const base = backendUrlInput.value.trim();
+      const url = base.replace(/\/$/, '') + path;
+      setStatus('⏳ fetching...');
+      try {
+        const res = await fetch(url);
+        setStatus('done');
+        const text = await res.text();
+        try { return JSON.parse(text); } catch { return text; }
+      } catch (e) {
+        setStatus('ERROR: Network or CORS issue');
+        throw e;
+      }
+    }
 
-    btnListReports.addEventListener('click', async () => {
-      await loadReports();
-    });
+    btnAnalyzeSample.addEventListener('click', async () => {
+      setStatus('Running sample analysis...');
+      show('Running sample analysis. This may take a few seconds...');
+      try {
+        const r = await post('/analyze_sample');
+        show(r);
+        // refresh reports list
+        await loadReports();
+      } catch (e) {
+        show('ERROR: ' + String(e));
+      }
+    });
 
-    btnDownload.addEventListener('click', async () => {
-      const file = reportSelect.value;
-      if(!file) return alert('Pick a report first');
-      setStatus('Downloading ' + file + ' ...');
-      try {
-        const data = await get('/download?filename=' + encodeURIComponent(file));
-        if(data && data.content) show(data.content);
-        else show(data);
-      } catch (e) { show('ERROR: ' + String(e)); }
-    });
+    btnListReports.addEventListener('click', async () => {
+      await loadReports();
+    });
 
-    async function loadReports(){
-      try {
-        const r = await get('/reports');
-        if(Array.isArray(r.reports)) {
-          reportSelect.innerHTML = '<option value="">-- pick report to download --</option>';
-          r.reports.forEach(f => {
-            const o = document.createElement('option');
-            o.value = f; o.textContent = f;
-            reportSelect.appendChild(o);
-          });
-          btnDownload.disabled = r.reports.length === 0;
-          show(r);
-        } else {
-          show(r);
-        }
-      } catch (e) {
-        show('ERROR: ' + String(e));
-      }
-    }
+    btnDownload.addEventListener('click', async () => {
+      const file = reportSelect.value;
+      if(!file) return alert('Pick a report first');
+      setStatus('Downloading ' + file + ' ...');
+      try {
+        const data = await get('/download?filename=' + encodeURIComponent(file));
+        if(data && data.content) show(data.content);
+        else show(data);
+      } catch (e) { show('ERROR: ' + String(e)); }
+    });
 
-    // load reports once on open
-    loadReports();
+    async function loadReports(){
+      try {
+        const r = await get('/reports');
+        if(Array.isArray(r.reports)) {
+          reportSelect.innerHTML = '<option value="">-- pick report to download --</option>';
+          r.reports.forEach(f => {
+            const o = document.createElement('option');
+            o.value = f; o.textContent = f;
+            reportSelect.appendChild(o);
+          });
+          btnDownload.disabled = r.reports.length === 0;
+          show(r);
+        } else {
+          show(r);
+        }
+      } catch (e) {
+        show('ERROR: ' + String(e));
+      }
+    }
 
-    // ---------- SSE logic ----------
-    function startSSE(browser="Chrome"){
-      if (sseConnection) return;
-      const base = backendUrlInput.value.replace(/\/$/, '');
-      const url = base + '/events?browser=' + encodeURIComponent(browser);
+    // load reports once on open
+    loadReports();
 
-      try {
-        const source = new EventSource(url);
+    // ---------- SSE logic ----------
+    function startSSE(browser="Chrome"){
+      if (sseConnection) return;
+      const base = backendUrlInput.value.replace(/\/$/, '');
+      const url = base + '/events?browser=' + encodeURIComponent(browser);
 
-        source.onmessage = function(e){
-          try {
-            const payload = JSON.parse(e.data);
-            if(payload.type === "new_history"){
-              payload.data.forEach(item => {
-                const line = `${item.timestamp} — ${item.domain || ''} — ${item.url}\n`;
-                // prepend new events
-                output.textContent = line + output.textContent;
-              });
-            } else {
-              // other message types
-              output.textContent = JSON.stringify(payload,null,2) + '\n' + output.textContent;
-            }
-          } catch(err) {
-            console.error("SSE parse error", err);
-          }
-        };
+      try {
+        const source = new EventSource(url);
 
-        source.addEventListener('heartbeat', function(e){ /* ignore heartbeats */ });
-        source.addEventListener('error', function(e){
-          console.error('SSE connection error', e);
-        });
+        source.onmessage = function(e){
+          try {
+            const payload = JSON.parse(e.data);
+            if(payload.type === "new_history"){
+              payload.data.forEach(item => {
+                const line = `${new Date(item.timestamp).toLocaleTimeString()} — ${item.domain || ''} — ${item.url}\n`;
+                // prepend new events
+                output.textContent = line + output.textContent;
+              });
+            } else {
+              // other message types
+              output.textContent = JSON.stringify(payload,null,2) + '\n' + output.textContent;
+            }
+          } catch(err) {
+            console.error("SSE parse error", err);
+          }
+        };
 
-        sseConnection = source;
-        sseStatus.textContent = 'SSE running (browser=' + browser + ')';
-        btnStartSSE.disabled = true;
-        btnStopSSE.disabled = false;
-      } catch (err) {
-        console.error("SSE not supported or failed:", err);
-        alert("Realtime updates not supported in this browser.");
-      }
-    }
+        source.addEventListener('heartbeat', function(e){ /* ignore heartbeats */ });
+        source.addEventListener('error', function(e){
+          console.error('SSE connection error', e);
+          sseStatus.textContent = 'SSE Error: Check connection/URL';
+          sseStatus.classList.add('status-error');
+        });
 
-    function stopSSE(){
-      if(!sseConnection) return;
-      try {
-        sseConnection.close();
-      } catch(e){ /* ignore */ }
-      sseConnection = null;
-      sseStatus.textContent = 'SSE stopped';
-      btnStartSSE.disabled = false;
-      btnStopSSE.disabled = true;
-    }
+        sseConnection = source;
+        sseStatus.textContent = 'SSE running (browser=' + browser + ')';
+        sseStatus.classList.remove('status-muted');
+        sseStatus.classList.add('status-green');
+        btnStartSSE.disabled = true;
+        btnStopSSE.disabled = false;
+      } catch (err) {
+        console.error("SSE not supported or failed:", err);
+        alert("Realtime updates not supported in this browser.");
+      }
+    }
 
-    btnStartSSE.addEventListener('click', () => startSSE('Chrome'));
-    btnStopSSE.addEventListener('click', stopSSE);
+    function stopSSE(){
+      if(!sseConnection) return;
+      try {
+        sseConnection.close();
+      } catch(e){ /* ignore */ }
+      sseConnection = null;
+      sseStatus.textContent = 'SSE stopped';
+      sseStatus.classList.remove('status-green', 'status-error');
+      sseStatus.classList.add('status-muted');
+      btnStartSSE.disabled = false;
+      btnStopSSE.disabled = true;
+    }
 
-    // Clean up on page unload
-    window.addEventListener('beforeunload', () => {
-      if (sseConnection) try { sseConnection.close(); } catch(_) {}
-    });
-  </script>
+    btnStartSSE.addEventListener('click', () => startSSE('Chrome'));
+    btnStopSSE.addEventListener('click', stopSSE);
+
+    // Clean up on page unload
+    window.addEventListener('beforeunload', () => {
+      if (sseConnection) try { sseConnection.close(); } catch(_) {}
+    });
+  </script>
 </body>
 </html>
