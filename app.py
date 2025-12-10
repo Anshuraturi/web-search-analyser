@@ -73,14 +73,20 @@ def list_reports():
     files = [str(p) for p in outdir.glob("*") if p.is_file()]
     return {"reports": files}
 
+
 @app.get("/download")
 def download_report(filename: str):
-    # Serve textual report content (safe for small demo)
-    outdir = Path("browser_analysis_reports")
-    file_path = outdir / filename
+    """Download a generated report file."""
+    folder = Path("browser_analysis_reports")
+    # sanitize filename: only keep the base name (prevent directory traversal)
+    safe_name = Path(filename).name
+    file_path = folder / safe_name
+
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
-    return {"filename": filename, "content": file_path.read_text(encoding="utf-8")}
+
+    return {"filename": safe_name, "content": file_path.read_text(encoding="utf-8")}
+
     # --- paste this at bottom of app.py ---
 
 import json
