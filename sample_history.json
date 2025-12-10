@@ -1,0 +1,30 @@
+[
+  {
+    "url": "https://example.com/welcome",
+    "title": "Welcome to Example",
+    "visit_count": 5,
+    "timestamp": "2025-12-09 10:15:00",
+    "domain": "example.com"
+  },
+  {
+    "url": "http://suspicious-site.tl/secure-update",
+    "title": "Secure Update",
+    "visit_count": 1,
+    "timestamp": "2025-12-09 12:01:00",
+    "domain": "suspicious-site.tl"
+  },
+  {
+    "url": "https://doubleclick.net/track",
+    "title": "Ad tracker",
+    "visit_count": 3,
+    "timestamp": "2025-12-08 18:30:00",
+    "domain": "doubleclick.net"
+  },
+  {
+    "url": "https://downloads.example.com/installer.zip",
+    "title": "Installer",
+    "visit_count": 2,
+    "timestamp": "2025-12-07 09:00:00",
+    "domain": "downloads.example.com"
+  }
+]
